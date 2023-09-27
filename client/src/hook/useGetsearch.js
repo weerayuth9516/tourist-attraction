@@ -1,23 +1,28 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { supabase } from "../supabase/client.js";
 
 function useGetsearch() {
   const [searchList, setSearchList] = useState([]);
   const [inputText, setInputText] = useState("");
 
   useEffect(() => {
-    getSearchList("เที่ยว");
+    getSearchList("");
   }, []);
 
-  const getSearchList = async (input) => {
+  const getSearchList = async (inputText) => {
     try {
-      const response = await axios.get(
-        `http://localhost:4001/trips?keywords=${input}`
-      );
-      setSearchList(response.data.data);
-      console.log(response.data.data);
+      const { data, error } = await supabase
+        .from("tourist_attraction")
+        .select("*")
+        .or(
+          `description.ilike.%${inputText}%, title.ilike.%${inputText}%,tags.cs.{${inputText}}`
+        );
+      if (error) {
+        throw error;
+      }
+      setSearchList(data);
     } catch (error) {
-      console.log("request error");
+      console.error("Request error:", error);
     }
   };
   return { searchList, setSearchList, inputText, setInputText, getSearchList };
